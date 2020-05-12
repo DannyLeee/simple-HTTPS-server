@@ -6,12 +6,14 @@
 #include <arpa/inet.h>
 #include "initial.h"
 
-char webPage[] =
+char webPageFirst[] =
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n"
 "<!DOCTYPE html>\r\n"
 "<html><head><title>webServer</title></head>\r\n"
-"<body><center><h3>Welcome to the 8787 server</h3><br>\r\n"
+"<body><center><h3>Welcome to the 8787 server</h3><br>\r\n";
+
+char webPageSecond[] =
 "</center></body></html>\r\n";
 
 int create_socket(int port)
@@ -53,6 +55,8 @@ int main(int argc, char *argv[])
 
     char * _CERT;
     char * _KEY;
+
+    pid_t cpid;
     switch (argc)
     {
     case 1:
@@ -104,8 +108,6 @@ int main(int argc, char *argv[])
         {
             printf("acc err: %d\n", acc);
             int err_SSL_get_error = SSL_get_error(ssl, acc);
-            // while (err_SSL_get_error = SSL_get_error(ssl, acc))
-            // {
                 if (SSL_get_verify_result(ssl) != X509_V_OK)
                 {
                     printf("Client certificate verify error\n");
@@ -147,30 +149,48 @@ int main(int argc, char *argv[])
                     perror("errno");
                     // exit(-1);
                 }
-            // }
-        }
-        else if (acc == 0)
-        {
-            printf("Other connection error\n");
-            printf("acc err: %d\n", acc);
-            int err_SSL_get_error = SSL_get_error(ssl, acc);
-            printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-            printf("Connection close\n");
         }
         else
         {
             printf("get connect!!\n");
-            printf("Verification client success!!\n");
             ShowCerts(ssl, 0);        /* get any certificates */
 
             count = SSL_read(ssl, receive, sizeof(receive));
             receive[count] = 0;
             printf("Received from client:\n");
             printf("%s\n\n", receive);
+            if (0)  // strcmp(receive, "GET")
+            {
 
-            SSL_write(ssl, webPage, sizeof(webPage));
-
-            
+            }
+            else
+            {
+                SSL_write(ssl, webPageFirst, sizeof(webPageFirst));
+                if ((fp = popen("ls | cat", "r")) == NULL)
+                {
+                    perror("open failed!");
+                    return -1;
+                }
+                char buf[256];
+                char linkFirst[] = "<a href='?f=";
+                char linkSecond[] = "'>";
+                char linkThird[] = "</a><br>";
+                while (fgets(buf, 255, fp) != NULL)
+                {
+                    SSL_write(ssl, "<a href='?f=", strlen("<a href='?f="));
+                    SSL_write(ssl, buf, strlen(buf));
+                    SSL_write(ssl, "'>", strlen("'>"));
+                    SSL_write(ssl, buf, strlen(buf));
+                    SSL_write(ssl, "</a><br>", strlen("</a><br>"));
+                }
+                printf("ls done\n");
+                if (pclose(fp) == -1)
+                {
+                    perror("close failed!");
+                    return -2;
+                }
+                
+            }
         }
 
         SSL_shutdown(ssl);
