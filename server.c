@@ -6,15 +6,19 @@
 #include <arpa/inet.h>
 #include "initial.h"
 
-char webPageFirst[] =
+char webPageResponse[] =
 "HTTP/1.1 200 OK\r\n"
-"Content-Type: text/html; charset=UTF-8\r\n\r\n"
-"<!DOCTYPE html>\r\n"
+"Content-Type: text/html; charset=UTF-8\r\n\r\n";
+
+char webPageIndex[] = "<!DOCTYPE html>\r\n"
 "<html><head><title>webServer</title></head>\r\n"
 "<body><center><h3>Welcome to the 8787 server</h3><br>\r\n";
 
-char webPageSecond[] =
+char webPageBaseTail[] =
 "</center></body></html>\r\n";
+
+char fileResponse[] = "HTTP/1.1 200 OK\r\n"
+"Content-Type: text/x-; charset=UTF-8\r\n\r\n";
 
 int create_socket(int port)
 {
@@ -159,37 +163,74 @@ int main(int argc, char *argv[])
             receive[count] = 0;
             printf("Received from client:\n");
             printf("%s\n\n", receive);
-            if (0)  // strcmp(receive, "GET")
-            {
 
-            }
-            else
+            
+
+            if (strncmp(receive, "GET / ", 6) == 0)
             {
-                SSL_write(ssl, webPageFirst, sizeof(webPageFirst));
-                if ((fp = popen("ls | cat", "r")) == NULL)
+                SSL_write(ssl, webPageResponse, strlen(webPageResponse));
+                SSL_write(ssl, webPageIndex, strlen(webPageIndex));
+                if ((fp = popen("ls -p | grep -v / | cat", "r")) == NULL)
                 {
                     perror("open failed!");
                     return -1;
                 }
                 char buf[256];
-                char linkFirst[] = "<a href='?f=";
-                char linkSecond[] = "'>";
-                char linkThird[] = "</a><br>";
                 while (fgets(buf, 255, fp) != NULL)
                 {
-                    SSL_write(ssl, "<a href='?f=", strlen("<a href='?f="));
+                    SSL_write(ssl, "<a href='./", strlen("<a href='./"));
                     SSL_write(ssl, buf, strlen(buf));
                     SSL_write(ssl, "'>", strlen("'>"));
                     SSL_write(ssl, buf, strlen(buf));
                     SSL_write(ssl, "</a><br>", strlen("</a><br>"));
                 }
+
                 printf("ls done\n");
                 if (pclose(fp) == -1)
                 {
                     perror("close failed!");
                     return -2;
                 }
+                SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
+            }
+            else if (strncmp(receive, "GET /favicon.ico", 16) == 0)
+            {
+                // do nothing
+            }
+            else
+            {
                 
+                char *file_name = strtok(receive, " ");
+                file_name = strtok(NULL, " ");
+                strcpy(file_name, file_name + 1);
+                printf("file name: %s\n", file_name);
+                if ((fp = fopen(file_name, "rb")) == NULL)
+                {
+                    char temp [] = "<!DOCTYPE html>\r\n"
+                    "<html><head><title>404 not found</title></head>\r\n"
+                    "<body><center>\r\n";
+                    SSL_write(ssl, webPageResponse, strlen(webPageResponse));
+                    SSL_write(ssl, temp, strlen(temp));
+                    SSL_write(ssl, "404 not found", 13);
+                    SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
+                    perror("File opening failed");
+                    continue;
+                }
+                else
+                {
+                    printf("Copying file: %s ... ...\n", file_name);
+                    fseek(fp, 0, SEEK_END);
+                    int file_size = ftell(fp);
+                    fseek(fp, 0, SEEK_SET);
+                    unsigned char *c = malloc(file_size * sizeof(char));
+                    fread(c, file_size, 1, fp);
+
+                    SSL_write(ssl, fileResponse, strlen(fileResponse));
+                    SSL_write(ssl, c, file_size);   // write whole file to client
+                    printf("File copy complete\n");
+                    fclose(fp);
+                    free(c);
+                }                
             }
         }
 
