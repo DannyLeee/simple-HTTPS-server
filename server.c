@@ -10,15 +10,11 @@ char webPageResponse[] =
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n";
 
-char webPageIndex[] = "<!DOCTYPE html>\r\n"
-"<html><head><title>webServer</title></head>\r\n"
-"<body><center><h3>Welcome to the 8787 server</h3><br>\r\n";
+char fileResponse[] = "HTTP/1.1 200 OK\r\n"
+"Content-Type: text/text; charset=UTF-8\r\n\r\n";
 
 char webPageBaseTail[] =
 "</center></body></html>\r\n";
-
-char fileResponse[] = "HTTP/1.1 200 OK\r\n"
-"Content-Type: text/x-; charset=UTF-8\r\n\r\n";
 
 int create_socket(int port)
 {
@@ -57,26 +53,9 @@ int main(int argc, char *argv[])
     int sock;
     SSL_CTX *ctx;
 
-    char * _CERT;
-    char * _KEY;
-
-    pid_t cpid;
-    switch (argc)
-    {
-    case 1:
-        _CERT = HOST_CERT;
-        _KEY =  HOST_KEY;
-        break;
-    case 2:
-        _CERT = (strcmp(argv[1], "wrong") == 0) ? WRONG_CERT : HOST_CERT;
-        _KEY = (strcmp(argv[1], "wrong") == 0) ? WRONG_KEY : HOST_KEY;
-        break;
-    default:
-        fprintf(stderr, "wrong argument number\n");
-        exit(EXIT_FAILURE);
-        break;
-    }
-
+    char * _CERT = HOST_CERT;
+    char * _KEY = HOST_KEY;
+    
     // 初始化 openssl
     SSL_library_init();
     ctx = create_context(0);
@@ -158,19 +137,19 @@ int main(int argc, char *argv[])
         else
         {
             printf("get connect!!\n");
-            ShowCerts(ssl, 0);        /* get any certificates */
 
             count = SSL_read(ssl, receive, sizeof(receive));
             receive[count] = 0;
             printf("Received from client:\n");
             printf("%s\n\n", receive);
 
-            
-
             if (strncmp(receive, "GET / ", 6) == 0)
             {
                 SSL_write(ssl, webPageResponse, strlen(webPageResponse));
-                SSL_write(ssl, webPageIndex, strlen(webPageIndex));
+                char * temp = "<!DOCTYPE html>\r\n"
+                "<html><head><title>webServer</title></head>\r\n"
+                "<body><center><h3>Welcome to the 8787 server</h3><br>\r\n";
+                SSL_write(ssl, temp, strlen(temp));
                 if ((fp = popen("ls -p | grep -v / | cat", "r")) == NULL)
                 {
                     perror("open failed!");
@@ -194,10 +173,7 @@ int main(int argc, char *argv[])
                 }
                 SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
             }
-            else if (strncmp(receive, "GET /favicon.ico", 16) == 0)
-            {
-                // do nothing
-            }
+            else if (strncmp(receive, "GET /favicon.ico", 16) == 0); // do nothing
             else
             {
                 
