@@ -102,49 +102,43 @@ int main(int argc, char *argv[])
             if (acc <= 0)
             {
                 printf("acc err: %d\n", acc);
-                int err_SSL_get_error = SSL_get_error(ssl, acc);
-                    if (SSL_get_verify_result(ssl) != X509_V_OK)
-                    {
-                        printf("Client certificate verify error\n");
-                        printf("Connection close\n");
-                    }
-                    
-                    if (err_SSL_get_error == SSL_ERROR_WANT_READ)
-                    {
-                        /* Wait for data to be read */
-                        printf("SSL_ERROR_WANT_READ\n");
-                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                    }
-                    else if (err_SSL_get_error == SSL_ERROR_WANT_WRITE)
-                    {
-                        /* Write data to continue */
-                        printf("SSL_ERROR_WANT_WRITE\n");
-                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                    }
-                    else if (err_SSL_get_error == SSL_ERROR_SYSCALL)
-                    {
-                        /* Hard error */
-                        printf("SSL_ERROR_SYSCALL\n");
-                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                        perror("errno");
-                        // exit(-1);
-                    }
-                    else if (err_SSL_get_error == err_SSL_get_error == SSL_ERROR_SSL)
-                    {
-                        printf("SSL_ERROR_SSL\n");
-                        printf("SSL err: %d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                        printf("ERR err: %d %s\n", ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
-                        perror("errno");
-                        // exit(-1);
-                    }
-                    else if (err_SSL_get_error == SSL_ERROR_ZERO_RETURN)
-                    {
-                        /* Same as error */
-                        printf("SSL_ERROR_ZERO_RETURN\n");
-                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                        perror("errno");
-                        // exit(-1);
-                    }
+                int err_SSL_get_error = SSL_get_error(ssl, acc);                    
+                if (err_SSL_get_error == SSL_ERROR_WANT_READ)
+                {
+                    /* Wait for data to be read */
+                    printf("SSL_ERROR_WANT_READ\n");
+                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                }
+                else if (err_SSL_get_error == SSL_ERROR_WANT_WRITE)
+                {
+                    /* Write data to continue */
+                    printf("SSL_ERROR_WANT_WRITE\n");
+                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                }
+                else if (err_SSL_get_error == SSL_ERROR_SYSCALL)
+                {
+                    /* Hard error */
+                    printf("SSL_ERROR_SYSCALL\n");
+                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                    perror("errno");
+                    exit(-1);
+                }
+                else if (err_SSL_get_error == err_SSL_get_error == SSL_ERROR_SSL)
+                {
+                    printf("SSL_ERROR_SSL\n");
+                    printf("SSL err: %d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                    printf("ERR err: %d %s\n", ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
+                    perror("errno");
+                    exit(-1);
+                }
+                else if (err_SSL_get_error == SSL_ERROR_ZERO_RETURN)
+                {
+                    /* Same as error */
+                    printf("SSL_ERROR_ZERO_RETURN\n");
+                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                    perror("errno");
+                    exit(-1);
+                }
             }
             else
             {
