@@ -141,7 +141,8 @@ int main(int argc, char *argv[])
                 else if (err_SSL_get_error == err_SSL_get_error == SSL_ERROR_SSL)
                 {
                     printf("SSL_ERROR_SSL\n");
-                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                    printf("SSL err: %d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                    printf("ERR err: %d %s\n", ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
                     perror("errno");
                     // exit(-1);
                 }
