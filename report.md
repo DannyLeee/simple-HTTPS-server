@@ -4,7 +4,43 @@
 日期:2020/5/22<br>
 </p>
 
-<h1 style="text-align:center;"> A Study of Man-in-the-Middle Attack Based on SSL Certificate Interaction
+<h1 style="text-align:center;"> Netweork Security - HW3
+
+# Part 1 - HTTPS implement
+
+## 建置環境
+* WSL(Ubuntu 16.04 LST)
+* VS code
+* Firefox
+
+## 使⽤說明
+* [README]()
+* step 0:
+    * 在系統目錄 `/etc/hosts` 中設定 domain name 對應到本機
+        * **domain name 需與 CA 的 CN 欄位相同**
+    * 在瀏覽器中設定 CA 路徑
+    * 先在 `initial.h` 中設定 server 的憑證及公鑰路徑
+* step 1: 在目錄中執行 `make`
+* step 2: 在目錄中執行 `./server`
+* step 3: 在瀏覽器中進入 <設定的 domain name>:8787，即可進入首頁
+* 使用時 terminal 將輸出每筆 request
+
+## 程式碼設計架構與說明
+
+## 成果截圖
+* 首頁
+![](https://i.imgur.com/4k3ef5d.png)
+* 點擊連結後
+![](https://i.imgur.com/566qJuB.png)
+* 下載的檔案
+![](https://i.imgur.com/KUrjDr4.png)
+
+## 困難與⼼得
+整個架構跟作業2類似，解析 request 則與作業1類似，困難的地方反而是設定瀏覽器的部分，因為不知道 CA 的 CN 要跟 domain name 相同，花了不少時間在嘗試解讀從 SSL 錯誤訊息撈到的東西，但都無功而返，所幸忽略錯誤後，奇蹟般地可以繼續連線並顯示，就把安全性驗證放一邊，先做出功能，後來得知 CN 與 domain name 要用相同後，卻只有在 firefox 才可以使用(明明我看的資料告訴我是 chrome 才這樣要求)， chrome 還是不行。
+
+
+---
+# Part 2 - A Study of Man-in-the-Middle Attack Based on SSL Certificate Interaction
 
 ## Abstract and Introduction
 * 分析 SSL 實作的 handshake 流程
@@ -79,10 +115,9 @@
 * 客戶端用相同算法確認資料完整性 (不同則斷開連線)
 * 攻擊者透過各種方法生成合法 certification mark 稱 hypocrisy
 
+    ---
 
----
+## 此篇中間⼈攻擊的⽅法
 
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({ tex2jax: {inlineMath: [['$', '$']]}, messageStyle: "none" });
-</script>
+## 對此做法的看法
+
