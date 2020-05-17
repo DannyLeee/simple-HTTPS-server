@@ -20,7 +20,7 @@ browser:
 ## How to use and what can do
 * click the link on the webpage can download it
 
-## more example
+## More example
 * This repo is the extension of below two repos
 * [simple http server](https://github.com/DannyLeee/HTTPD-from-scratch)
 * [simple TLS server/client](https://github.com/DannyLeee/simple-TLS-server-client)

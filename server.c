@@ -6,6 +6,8 @@
 #include <arpa/inet.h>
 #include "initial.h"
 
+#define DEBUG
+
 char webPageResponse[] =
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n";
@@ -55,6 +57,7 @@ int main(int argc, char *argv[])
 
     char * _CERT = HOST_CERT;
     char * _KEY = HOST_KEY;
+    pid_t cpid;
     
     // 初始化 openssl
     SSL_library_init();
@@ -80,140 +83,159 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 
-        ssl = SSL_new(ctx);
-        SSL_set_fd(ssl, client);    // 配對 SSL 跟新的連線 fd
-        SSL_set_verify_depth(ssl, 1);
-
-
-        // SSL_accept() 處理 TSL handshake
-        int acc = SSL_accept(ssl);
-        if (acc <= 0)
+        if((cpid = fork()) < 0) {
+			perror("fork");
+			exit(EXIT_FAILURE);
+		}
+        
+        /*child process*/
+        if (cpid == 0)
         {
-            printf("acc err: %d\n", acc);
-            int err_SSL_get_error = SSL_get_error(ssl, acc);
-                if (SSL_get_verify_result(ssl) != X509_V_OK)
-                {
-                    printf("Client certificate verify error\n");
-                    printf("Connection close\n");
-                }
-                
-                if (err_SSL_get_error == SSL_ERROR_WANT_READ)
-                {
-                    /* Wait for data to be read */
-                    printf("SSL_ERROR_WANT_READ\n");
-                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                }
-                else if (err_SSL_get_error == SSL_ERROR_WANT_WRITE)
-                {
-                    /* Write data to continue */
-                    printf("SSL_ERROR_WANT_WRITE\n");
-                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                }
-                else if (err_SSL_get_error == SSL_ERROR_SYSCALL)
-                {
-                    /* Hard error */
-                    printf("SSL_ERROR_SYSCALL\n");
-                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                    perror("errno");
-                    // exit(-1);
-                }
-                else if (err_SSL_get_error == err_SSL_get_error == SSL_ERROR_SSL)
-                {
-                    printf("SSL_ERROR_SSL\n");
-                    printf("SSL err: %d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                    printf("ERR err: %d %s\n", ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
-                    perror("errno");
-                    // exit(-1);
-                }
-                else if (err_SSL_get_error == SSL_ERROR_ZERO_RETURN)
-                {
-                    /* Same as error */
-                    printf("SSL_ERROR_ZERO_RETURN\n");
-                    printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
-                    perror("errno");
-                    // exit(-1);
-                }
-        }
-        else
-        {
-            printf("get connect!!\n");
+            printf("child process\n\n");
+            ssl = SSL_new(ctx);
+            SSL_set_fd(ssl, client);    // 配對 SSL 跟新的連線 fd
+            SSL_set_verify_depth(ssl, 1);
 
-            count = SSL_read(ssl, receive, sizeof(receive));
-            receive[count] = 0;
-            printf("Received from client:\n");
-            printf("%s\n\n", receive);
 
-            if (strncmp(receive, "GET / ", 6) == 0)
+            // SSL_accept() 處理 TSL handshake
+            int acc = SSL_accept(ssl);
+            if (acc <= 0)
             {
-                SSL_write(ssl, webPageResponse, strlen(webPageResponse));
-                char * temp = "<!DOCTYPE html>\r\n"
-                "<html><head><title>webServer</title></head>\r\n"
-                "<body><center><h3>Welcome to the 8787 server</h3><br>\r\n";
-                SSL_write(ssl, temp, strlen(temp));
-                if ((fp = popen("ls -p | grep -v / | cat", "r")) == NULL)
-                {
-                    perror("open failed!");
-                    return -1;
-                }
-                char buf[256];
-                while (fgets(buf, 255, fp) != NULL)
-                {
-                    SSL_write(ssl, "<a href='./", strlen("<a href='./"));
-                    SSL_write(ssl, buf, strlen(buf));
-                    SSL_write(ssl, "'>", strlen("'>"));
-                    SSL_write(ssl, buf, strlen(buf));
-                    SSL_write(ssl, "</a><br>", strlen("</a><br>"));
-                }
-
-                printf("ls done\n");
-                if (pclose(fp) == -1)
-                {
-                    perror("close failed!");
-                    return -2;
-                }
-                SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
+                printf("acc err: %d\n", acc);
+                int err_SSL_get_error = SSL_get_error(ssl, acc);
+                    if (SSL_get_verify_result(ssl) != X509_V_OK)
+                    {
+                        printf("Client certificate verify error\n");
+                        printf("Connection close\n");
+                    }
+                    
+                    if (err_SSL_get_error == SSL_ERROR_WANT_READ)
+                    {
+                        /* Wait for data to be read */
+                        printf("SSL_ERROR_WANT_READ\n");
+                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                    }
+                    else if (err_SSL_get_error == SSL_ERROR_WANT_WRITE)
+                    {
+                        /* Write data to continue */
+                        printf("SSL_ERROR_WANT_WRITE\n");
+                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                    }
+                    else if (err_SSL_get_error == SSL_ERROR_SYSCALL)
+                    {
+                        /* Hard error */
+                        printf("SSL_ERROR_SYSCALL\n");
+                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                        perror("errno");
+                        // exit(-1);
+                    }
+                    else if (err_SSL_get_error == err_SSL_get_error == SSL_ERROR_SSL)
+                    {
+                        printf("SSL_ERROR_SSL\n");
+                        printf("SSL err: %d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                        printf("ERR err: %d %s\n", ERR_get_error(), ERR_error_string(ERR_get_error(), NULL));
+                        perror("errno");
+                        // exit(-1);
+                    }
+                    else if (err_SSL_get_error == SSL_ERROR_ZERO_RETURN)
+                    {
+                        /* Same as error */
+                        printf("SSL_ERROR_ZERO_RETURN\n");
+                        printf("%d %s\n", err_SSL_get_error, ERR_error_string(err_SSL_get_error, NULL));
+                        perror("errno");
+                        // exit(-1);
+                    }
             }
-            else if (strncmp(receive, "GET /favicon.ico", 16) == 0); // do nothing
             else
             {
-                
-                char *file_name = strtok(receive, " ");
-                file_name = strtok(NULL, " ");
-                strcpy(file_name, file_name + 1);
-                printf("file name: %s\n", file_name);
-                if ((fp = fopen(file_name, "rb")) == NULL)
+                printf("get connect!!\n");
+
+                count = SSL_read(ssl, receive, sizeof(receive));
+                receive[count] = 0;
+                printf("Received from client:\n");
+                printf("%s\n\n", receive);
+
+                if (strncmp(receive, "GET / ", 6) == 0)
                 {
-                    char temp [] = "<!DOCTYPE html>\r\n"
-                    "<html><head><title>404 not found</title></head>\r\n"
-                    "<body><center>\r\n";
                     SSL_write(ssl, webPageResponse, strlen(webPageResponse));
+                    char * temp = "<!DOCTYPE html>\r\n"
+                    "<html><head><title>webServer</title></head>\r\n"
+                    "<body><center><h3>Welcome to the 8787 server</h3><br>\r\n";
                     SSL_write(ssl, temp, strlen(temp));
-                    SSL_write(ssl, "404 not found", 13);
+                    if ((fp = popen("ls -p | grep -v / | cat", "r")) == NULL)
+                    {
+                        perror("open failed!");
+                        return -1;
+                    }
+                    char buf[256];
+                    while (fgets(buf, 255, fp) != NULL)
+                    {
+                        SSL_write(ssl, "<a href='./", strlen("<a href='./"));
+                        SSL_write(ssl, buf, strlen(buf));
+                        SSL_write(ssl, "'>", strlen("'>"));
+                        SSL_write(ssl, buf, strlen(buf));
+                        SSL_write(ssl, "</a><br>", strlen("</a><br>"));
+                    }
+#ifdef DEBUG
+                    printf("ls done\n");
+#endif
+                    if (pclose(fp) == -1)
+                    {
+                        perror("close failed!");
+                        return -2;
+                    }
                     SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
-                    perror("File opening failed");
-                    continue;
                 }
+                else if (strncmp(receive, "GET /favicon.ico", 16) == 0); // do nothing
                 else
                 {
-                    printf("Copying file: %s ... ...\n", file_name);
-                    fseek(fp, 0, SEEK_END);
-                    int file_size = ftell(fp);
-                    fseek(fp, 0, SEEK_SET);
-                    unsigned char *c = malloc(file_size * sizeof(char));
-                    fread(c, file_size, 1, fp);
+                    
+                    char *file_name = strtok(receive, " ");
+                    file_name = strtok(NULL, " ");
+                    strcpy(file_name, file_name + 1);
+#ifdef DEDUG
+                    printf("file name: %s\n", file_name);
+#endif
+                    if ((fp = fopen(file_name, "rb")) == NULL)
+                    {
+                        char temp [] = "<!DOCTYPE html>\r\n"
+                        "<html><head><title>404 not found</title></head>\r\n"
+                        "<body><center>\r\n";
+                        SSL_write(ssl, webPageResponse, strlen(webPageResponse));
+                        SSL_write(ssl, temp, strlen(temp));
+                        SSL_write(ssl, "404 not found", 13);
+                        SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
+                        perror("File opening failed");
+                        continue;
+                    }
+                    else
+                    {
+#ifdef DEBUG
+                        printf("Copying file: %s ... ...\n", file_name);
+#endif
+                        fseek(fp, 0, SEEK_END);
+                        int file_size = ftell(fp);
+                        fseek(fp, 0, SEEK_SET);
+                        unsigned char *c = malloc(file_size * sizeof(char));
+                        fread(c, file_size, 1, fp);
 
-                    SSL_write(ssl, fileResponse, strlen(fileResponse));
-                    SSL_write(ssl, c, file_size);   // write whole file to client
-                    printf("File copy complete\n");
-                    fclose(fp);
-                    free(c);
-                }                
+                        SSL_write(ssl, fileResponse, strlen(fileResponse));
+                        SSL_write(ssl, c, file_size);   // write whole file to client
+                        printf("File copy complete\n");
+                        fclose(fp);
+                        free(c);
+                    }
+                }
             }
-        }
 
-        SSL_shutdown(ssl);
-        SSL_free(ssl);
+            SSL_shutdown(ssl);
+            SSL_free(ssl);
+#ifdef DEBUG
+            printf("child end\n\n");
+#endif
+        }
         close(client);
+        
     }
 
     close(sock);

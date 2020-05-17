@@ -14,7 +14,7 @@
 * Firefox
 
 ## 使⽤說明
-* [README]()
+* [README](https://github.com/DannyLeee/simple-HTTPS-server/blob/master/README.md)
 * step 0:
     * 在系統目錄 `/etc/hosts` 中設定 domain name 對應到本機
         * **domain name 需與 CA 的 CN 欄位相同**
