@@ -13,10 +13,16 @@ char webPageResponse[] =
 "Content-Type: text/html; charset=UTF-8\r\n\r\n";
 
 char fileResponse[] = "HTTP/1.1 200 OK\r\n"
-"Content-Type: text/text; charset=UTF-8\r\n\r\n";
+"Content-Type: text/x-; charset=UTF-8\r\n\r\n";
 
 char webPageBaseTail[] =
 "</center></body></html>\r\n";
+
+char notFound404 [] = "HTTP/1.1 404 Not Found\r\n"
+"Content-Type: text/html; charset=UTF-8\r\n\r\n"
+"<!DOCTYPE html>\r\n"
+"<html><head><title>404 not found</title></head>\r\n"
+"<body><center>404 not found\r\n";
 
 int create_socket(int port)
 {
@@ -91,11 +97,11 @@ int main(int argc, char *argv[])
         /*child process*/
         if (cpid == 0)
         {
+#ifdef DEBUG
             printf("child process\n\n");
+#endif
             ssl = SSL_new(ctx);
             SSL_set_fd(ssl, client);    // 配對 SSL 跟新的連線 fd
-            SSL_set_verify_depth(ssl, 1);
-
 
             // SSL_accept() 處理 TSL handshake
             int acc = SSL_accept(ssl);
@@ -149,7 +155,7 @@ int main(int argc, char *argv[])
                 printf("Received from client:\n");
                 printf("%s\n\n", receive);
 
-                if (strncmp(receive, "GET / ", 6) == 0)
+                if (strncmp(receive, "GET / ", 6) == 0 || strncmp(receive, "GET /favicon.ico", 16) == 0)
                 {
                     SSL_write(ssl, webPageResponse, strlen(webPageResponse));
                     char * temp = "<!DOCTYPE html>\r\n"
@@ -180,7 +186,6 @@ int main(int argc, char *argv[])
                     }
                     SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
                 }
-                else if (strncmp(receive, "GET /favicon.ico", 16) == 0); // do nothing
                 else
                 {
                     
@@ -192,15 +197,9 @@ int main(int argc, char *argv[])
 #endif
                     if ((fp = fopen(file_name, "rb")) == NULL)
                     {
-                        char temp [] = "<!DOCTYPE html>\r\n"
-                        "<html><head><title>404 not found</title></head>\r\n"
-                        "<body><center>\r\n";
-                        SSL_write(ssl, webPageResponse, strlen(webPageResponse));
-                        SSL_write(ssl, temp, strlen(temp));
-                        SSL_write(ssl, "404 not found", 13);
+                        SSL_write(ssl, notFound404, strlen(notFound404));
                         SSL_write(ssl, webPageBaseTail, strlen(webPageBaseTail));
                         perror("File opening failed");
-                        continue;
                     }
                     else
                     {
